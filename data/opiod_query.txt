@@ -1,0 +1,62 @@
+use PVReportLive2			
+			
+SELECT distinct 			
+		  s.WorldwideUniqueCaseIdentification	
+		 ,s.Status	
+		 ,s.Category	
+		 ,pat.BodyWeight	
+		 ,pat.Height	
+		 ,CONVERT(date, s.DateReceived) date_received	
+		 ,case when pat.Sex = 1 then 'male'	
+			when pat.Sex = 2 then 'female'
+			else 'unknown' end sex
+		 ,case when pa.AgeAtOnsetOfReactionEvent is not null and pa.AgeAtOnsetOfReactionEventUnit is not null then	
+			(round(cast(case
+			when pa.AgeAtOnsetOfReactionEventUnit = 's' then pa.AgeAtOnsetOfReactionEvent / (365.25*24*3600)
+			when pa.AgeAtOnsetOfReactionEventUnit = 'min' then pa.AgeAtOnsetOfReactionEvent / (365.25*24*60)
+			when pa.AgeAtOnsetOfReactionEventUnit = 'h' then pa.AgeAtOnsetOfReactionEvent /(365.25*24)
+			when pa.AgeAtOnsetOfReactionEventUnit = 'd' then pa.AgeAtOnsetOfReactionEvent /365.25
+			when pa.AgeAtOnsetOfReactionEventUnit = 'wk' then pa.AgeAtOnsetOfReactionEvent * (7/365.25)
+			when pa.AgeAtOnsetOfReactionEventUnit = 'mo' then pa.AgeAtOnsetOfReactionEvent /12
+			when pa.AgeAtOnsetOfReactionEventUnit = '{trimester}' then pa.AgeAtOnsetOfReactionEvent /3
+			when pa.AgeAtOnsetOfReactionEventUnit = 'a' then pa.AgeAtOnsetOfReactionEvent * 1
+			when pa.AgeAtOnsetOfReactionEventUnit = '{decade}' then pa.AgeAtOnsetOfReactionEvent * 10
+			else NULL end as float),1))  
+			else 
+			(case when pa.DateOfBirth is not null and r.StartDate is not null
+			then DATEDIFF(year, pa.DateOfBirth, r.StartDate)
+			else null end)
+			end as age_year
+		 ,r.Outcome	
+		 ,r.OutcomeCodeSystemVersion	
+		 ,r.OutcomeText	
+		 ,r.ImpactQuality 'reaction_impact'	
+		 ,g.ATCText	
+		 ,d.ATCode	
+		 ,g.GenericDrugName	
+		 ,med.*	
+			
+		 ,r.ReactionDescriptionByPrimarySource 'Primary Source Description'	
+		 ,replace(replace(sum1.CaseNarrative, char(10),' '),char(13),' ' ) as summary	
+		 ,replace(replace(sum2.CaseSummaryAndReporterCommentsText, char(10),' '), char(13),' ') as narrative	
+			
+			
+FROM r3.SafetyReport s 			
+  left join r3.Drug d on s.SafetyReportId = d.SafetyReportRefId 			
+  left join GenericDrugs g on d.GPCode = g.GPCode			
+  left join r3.Reaction r on s.SafetyReportId = r.SafetyReportRefId			
+  left join MeddraHierarchyLine med on r.ReactionMedDraCode = med.LLTCode			
+  left join r3.PatientCharacteristics pat on s.SafetyReportId = pat.PatientCharacteristicsId			
+  left join r3.NarrativeCaseSummary sum1 on s.SafetyReportId = sum1.NarrativeCaseSummaryId			
+  left join r3.CaseSummaryAndReporterCommentsInNativeLanguage sum2 on sum1.NarrativeCaseSummaryId = sum2.NarrativeCaseSummaryRefId			
+  left join r3.PatientAgeInformation pa on pat.PatientCharacteristicsId = pa.PatientAgeInformationId			
+			
+			
+  			
+WHERE d.CharacterizationOfDrugRole in (1,3) -- suspect and interacting drugs			
+and s.CaseClassification = 1 -- case report			
+and s.Status = 40 --closed			
+and isnull(s.ReportNullificationAmendment, 9) <> 1 -- nullified excluded			
+and d.ATCode like 'N02A%'  			
+			
+order by s.WorldwideUniqueCaseIdentification			
