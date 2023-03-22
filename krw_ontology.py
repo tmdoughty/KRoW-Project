@@ -7,7 +7,9 @@ from owlrl import DeductiveClosure, RDFS_Semantics, OWLRL_Semantics
 import networkx as nx
 from owlready2 import get_ontology, Thing, DataProperty, ObjectProperty, sync_reasoner
 
-data =  pd.read_csv('./data/opioids.csv', sep=',',engine='python')
+data =  pd.read_csv('./data/opioids_data.csv', sep=',',engine='python')
+
+additional_data = pd.read_csv('./data/additional_data.csv', sep=',',engine='python')
 
 onto = get_ontology("http://test.org/onto.owl")
 
@@ -34,6 +36,37 @@ class Age(Thing):
 # drug
 class ATCode(Codes):
     namespace = onto
+
+
+# drug properties
+class MuOpiodReceptor(Thing):
+    namespace = onto
+class SodiumDependentNoradrenalineTransporter(Thing):
+    namespace = onto
+class SodiumDependentSerotoninTransporter(Thing):
+    namespace = onto
+class DeltaOpiodReceptor(Thing):
+    namespace = onto
+class KappaOpiodReceptor(Thing):
+    namespace = onto
+class MolecularWeight(Thing):
+    namespace = onto
+class XLogP3(Thing):
+    namespace = onto
+class HydrogenBondDonorCount(Thing):
+    namespace = onto
+class HydrogenBondAcceptorCount(Thing):
+    namespace = onto
+class RotatableBondCount(Thing):
+    namespace = onto
+class MonoisotopicMass(Thing):
+    namespace = onto
+class HeavyAtomCount(Thing):
+    namespace = onto
+class Complexity(Thing):
+    namespace = onto
+
+
 
 # symptoms
 class PTCode(Codes):
@@ -114,6 +147,74 @@ class occuredIn(ObjectProperty):
     range = [Person]
     namespace = onto
 
+    # drug properties
+
+
+class hasMuOpiodReceptor:
+    domain = [ATCode]
+    range = [MuOpiodReceptor]
+    namespace = onto
+
+class hasSodiumDependentNoradrenalineTransporter:
+    domain = [ATCode]
+    range = [SodiumDependentNoradrenalineTransporter]
+    namespace = onto
+
+class hasSodiumDependentSerotoninTransporter:
+    domain = ATCode
+    range = [SodiumDependentSerotoninTransporter]
+    namespace = onto
+
+class hasDeltaOpiodReceptor:
+    domain = ATCode
+    range = [DeltaOpiodReceptor]
+    namespace = onto
+
+class hasKappaOpiodReceptor:
+    domain = ATCode
+    range = [KappaOpiodReceptor]
+    namespace = onto
+
+class hasMolecularWeight:
+    domain = [ATCode]
+    range = [MolecularWeight]
+    namespace = onto
+
+class hasXLogP3:
+    domain = [ATCode]
+    range = [XLogP3]
+    namespace = onto
+
+class hasHydrogenBondDonorCount:
+    domain = [ATCode]
+    range = [HydrogenBondDonorCount]
+    namespace = onto
+
+class hasHydrogenBondAcceptorCount:
+    domain = [ATCode]
+    range = [HydrogenBondAcceptorCount]
+    namespace = onto
+
+class hasRotatableBondCount:
+    domain = [ATCode]
+    range = [RotatableBondCount]
+    namespace = onto
+
+class hasMonoisotopicMass:
+    domain = [ATCode]
+    range = [MonoisotopicMass]
+    namespace = onto
+
+class hasHeavyAtomCount:
+    domain = [ATCode]
+    range = [HeavyAtomCount]
+    namespace = onto
+
+class hasComplexity:
+    domain = [ATCode]
+    range = [Complexity]
+    namespace = onto
+
 
 #### save ontology ####
 onto.save(file = "./data/Project_onto.owl", format = "rdfxml")
@@ -143,8 +244,29 @@ for index, opioid in data.iterrows():
     atc = URIRef(EX+opioid["ATCode"])
     g.add((atc, EX.resultedIn, llt))
     g.add((atc, EX.drugDosage, Literal(opioid["GenericDrugName"])))
-    
 
+
+for index, opioid in additional_data.iterrows():
+    drug = URIRef(EX+opioid["ATCode"])
+    g.add((drug, EX.hasMuOpiodReceptor, Literal(opioid["Mu-type opioid receptor"])))
+    g.add((drug, EX.hasSodiumDependentNoradrenalineTransporter, Literal(opioid["Sodium-dependent noradrenaline transporter"])))
+    g.add((drug, EX.hasSodiumDependentNoradrenalineTransporter, Literal(opioid["Sodium-dependent noradrenaline transporter"])))
+    g.add((drug, EX.hasSodiumDependentSerotoninTransporter, Literal(opioid["Sodium-dependent serotonin transporter"])))
+    g.add((drug, EX.hasDeltaOpioidReceptor, Literal(opioid["Delta-type opioid receptor"])))
+    g.add((drug, EX.hasKappaOpioidReceptor, Literal(opioid["Kappa-type opioid receptor"])))
+    g.add((drug, EX.hasMolecularWeight, Literal(opioid["molecular weight"])))
+    g.add((drug, EX.hasXLogP3, Literal(opioid["XLogP3"])))
+    g.add((drug, EX.hasHydrogenBondDonorCount, Literal(opioid["Hydrogen Bond Donor Count"])))
+    g.add((drug, EX.hasHydrogenBondAcceptorCount, Literal(opioid["Hydrogen Bond Acceptor Count"])))
+    g.add((drug, EX.hasRotatableBondCount, Literal(opioid["Rotatable Bond Count"])))
+    g.add((drug, EX.hasMonoisotopicMass, Literal(opioid["Monoisotopic Mass"])))
+    g.add((drug, EX.hasMHeavyAtomCount, Literal(opioid["Heavy Atom Count"])))
+    g.add((drug, EX.hasComplexity, Literal(opioid["Complexity"])))
+    
+    
+    
+    
+   
 #### reasoner ####
 DeductiveClosure(OWLRL_Semantics ).expand(g)
 
