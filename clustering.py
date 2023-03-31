@@ -17,15 +17,19 @@
 
 import pykeen
 from sklearn.cluster import KMeans
+from pykeen import utils, triples, models
 import sklearn 
+import numpy
 
 
 # load the knowledge graph
-knowledge_graph = from_path(r'C:\Users\dough\Documents\GitHub\KRoW-Project\data\Project_onto.owl')
-# knowledge_graph = pykeen.triples.utils.load_triples(r'C:\Users\dough\Documents\GitHub\KRoW-Project\data\Project_onto.owl')
+# knowledge_graph = from_path(r'C:\Users\dough\Documents\GitHub\KRoW-Project\data\Project_onto.owl')
+knowledge_graph = pykeen.triples.utils.load_triples(r'C:\Users\dough\Documents\GitHub\KRoW-Project\data\Project_onto.owl')
 # pykeen.triples.utils.load_triples()
 # extract features
-model = pykeen.models.TransE()
+
+KG = pykeen.triples.TriplesFactory(knowledge_graph)
+model = pykeen.models.TransE(triples_factory = KG)
 model.fit(knowledge_graph)
 features = model.get_all_entities()
 
