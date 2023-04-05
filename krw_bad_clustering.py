@@ -15,7 +15,7 @@ import networkx.algorithms.community as nx_comm
 ##################### CLUSTERING ON THE GRAPH ITSELF WITH THE WHOLE ONTOLOGY - NOT CORRECT #######################
 # parse the ontology into a graph
 g = Graph()
-g.parse("./data/Project.ttl")
+g.parse("./data/Project")
 
 # turn graph into networkx graph
 nx_graph = rdflib_to_networkx_digraph(g)
