@@ -37,7 +37,7 @@ print('Test set size: ', testing.triples.shape)
 pipeline_result = pipeline(
     random_seed=0,
     model='ComplEx',                # CHANGE MODEL:
-    #dimensions=150,                         # elise: ComplEx
+    dimensions=150,                         # elise: ComplEx
     training=training,                      # Josip: TransE
     testing=testing,                        # taylor: RotatE
      training_kwargs=dict(                  # nikki: DistMult
