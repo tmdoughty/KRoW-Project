@@ -7,9 +7,9 @@ from owlrl import DeductiveClosure, RDFS_Semantics, OWLRL_Semantics
 import networkx as nx
 from owlready2 import get_ontology, Thing, DataProperty, ObjectProperty, sync_reasoner
 
-data =  pd.read_csv('./data/opioids_data.csv', sep=',',engine='python')
+data =  pd.read_csv('data/opioids_data.csv', sep=',',engine='python')
 
-additional_data = pd.read_csv('./data/additional_data.csv', sep=',',engine='python')
+additional_data = pd.read_csv('data/additional_data.csv', sep=',',engine='python')
 
 onto = get_ontology("http://test.org/onto.owl")
 
@@ -35,6 +35,8 @@ class Age(Thing):
 
 # drug
 class ATCode(Codes):
+    namespace = onto
+class ATCName(Codes):
     namespace = onto
 
 
@@ -65,7 +67,6 @@ class HeavyAtomCount(Thing):
     namespace = onto
 class Complexity(Thing):
     namespace = onto
-
 
 
 # symptoms
@@ -146,9 +147,13 @@ class occuredIn(ObjectProperty):
     domain = [LLTCode]
     range = [Person]
     namespace = onto
+class drugName(ObjectProperty):
+    domain = [ATCode]
+    range = [ATCName]
+    namespace = onto
 
-    # drug properties
 
+# drug properties
 
 class hasMuOpiodReceptor:
     domain = [ATCode]
@@ -244,6 +249,7 @@ for index, opioid in data.iterrows():
     atc = URIRef(EX+opioid["ATCode"])
     g.add((atc, EX.resultedIn, llt))
     g.add((atc, EX.drugDosage, Literal(opioid["GenericDrugName"])))
+    g.add((atc, EX.drugName, Literal(opioid['ATCText'])))
 
 
 for index, opioid in additional_data.iterrows():
@@ -264,14 +270,9 @@ for index, opioid in additional_data.iterrows():
     g.add((drug, EX.hasComplexity, Literal(opioid["Complexity"])))
     
     
-    
-    
-   
-#### reasoner ####
-DeductiveClosure(OWLRL_Semantics ).expand(g)
 
 #### save graph ####
-g.serialize(format='turtle', destination="./data/Project")
+g.serialize(format='turtle', destination="./data/KG.ttl")
 
 
 
