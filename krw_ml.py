@@ -42,7 +42,7 @@ pipeline_result = pipeline(
     testing=testing,                        # taylor: RotatE
      training_kwargs=dict(                  # nikki: DistMult
         num_epochs=1,                                          # epochs: 50 and 100
-        checkpoint_name='got_complex_checkpoint.pt',
+        checkpoint_name='checkpoint.pt',
         checkpoint_directory='checkpoint_dir/',
         checkpoint_frequency=20,
     ),
