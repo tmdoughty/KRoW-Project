@@ -128650,8 +128650,8 @@ xsd:double a rdfs:Datatype ;
     owl:sameAs "NaN"^^xsd:double .
 
 [] a err:ErrorMessage ;
-    err:error "Lexical value of the literal 'nan' does not match its datatype (http://www.w3.org/2001/XMLSchema#double)" .
+    err:error "Lexical value of the literal '0.0' does not match its datatype (http://www.w3.org/2001/XMLSchema#double)" .
 
 [] a err:ErrorMessage ;
-    err:error "Lexical value of the literal '0.0' does not match its datatype (http://www.w3.org/2001/XMLSchema#double)" .
+    err:error "Lexical value of the literal 'nan' does not match its datatype (http://www.w3.org/2001/XMLSchema#double)" .
 
