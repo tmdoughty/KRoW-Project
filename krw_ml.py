@@ -21,10 +21,15 @@ g.parse("./data/Project.ttl")
 data = []
 i=0
 for s,p,o in g.triples((None,None,None)):
-    if '#' in s and '#' in p and '#' in o:
-        data.append([s.split("#")[1], p.split("#")[1], o.split("#")[1]])
-# print(data[:10])
+    if '#' in s:
+        s = s.split("#")[1]
+    if '#' in p:
+        p = p.split("#")[1]
+    if '#' in o:
+        o = o.split("#")[1]
+    data.append([s, p, o])
 t = np.array(data, dtype=str)
+
 
 ############################################### ML + CLUSTERING  ###################################################
 
