@@ -14,9 +14,12 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from adjustText import adjust_text
 from ampligraph.discovery import find_clusters
+import rdflib
+from rdflib import Graph, ConjunctiveGraph, Literal, BNode, Namespace, RDF, URIRef, Literal, OWL, RDFS
+from rdflib.namespace import DC, FOAF
 
 g = Graph()
-g.parse(r'C:\Users\dough\Documents\GitHub\KRoW-Project\data\Project')
+g.parse('./data/Project')
 # print(g)
 
 data = []
@@ -29,7 +32,7 @@ t = np.array(data, dtype=str)
 
 trip = triples.TriplesFactory.from_labeled_triples(t)
 # print(trip)
-training, testing = trip.split([0.95,0.05])
+X_train, X_test = trip.split([0.95,0.05])
 
 # path_to_kg = (r'C:\Users\dough\Documents\GitHub\KRoW-Project\data\Project.ttl')
 # triples_factory = pykeen.triples.TriplesFactory.from_path(path=path_to_kg, create_inverse_triples=False)
@@ -72,20 +75,34 @@ training, testing = trip.split([0.95,0.05])
 
 # # Print the cluster labels
 # print("Cluster labels: ", cluster_labels)
-import rdflib
-from rdflib import Graph, ConjunctiveGraph, Literal, BNode, Namespace, RDF, URIRef, Literal, OWL, RDFS
-from rdflib.namespace import DC, FOAF
+
 EX = rdflib.Namespace("http://test.org/myonto.owl#")
+
+import ampligraph
+from ampligraph.latent_features import ScoringBasedEmbeddingModel
+
+model = ScoringBasedEmbeddingModel(k=100,
+                                   eta=20,
+                                   scoring_type='ComplEx')
+
+# model.fit(X_train,
+#           batch_size=int(X_train.shape[0] / 50),
+#           epochs=300,  # Number of training epochs
+#           verbose=True  # Enable stdout messages
+#           )
 
 ppl = []
 for s in g.subjects(RDF.type, EX.Person):
+    print(s)
     if "ex:Person" in s:
         ppl.append(s)
 print("THIS IS PEOPLE", ppl)
 
 
-# people = triples_df.s[triples_df.s.str.startswith('Team')].unique()
-# embeddings_2d = PCA(n_components=2).fit_transform(entity_embedding_tensor)
+ppl_embeddings = dict(zip(ppl, model.get_embeddings(ppl)))
+ppl_embeddings_array = np.array([i for i in ppl_embeddings.values()])
+embeddings_2d = PCA(n_components=2).fit_transform(ppl_embeddings_array)
 
-# clustering_algorithm = KMeans(n_clusters=6, n_init=100, max_iter=500, random_state=0)
-# clusters = find_clusters(people, model, clustering_algorithm, mode='e')
+# Cluster embeddings (on the original space)
+clustering_algorithm = KMeans(n_clusters=6, n_init=100, max_iter=500, random_state=0)
+clusters = find_clusters(ppl, model, clustering_algorithm, mode='e')
