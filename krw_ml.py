@@ -1,20 +1,20 @@
-# you need to install pykeen beforehand, see https://pykeen.readthedocs.io/en/stable/installation.html 
 import numpy as np
 import pandas as pd
 from pykeen.pipeline import pipeline
 from pykeen import triples
-from rdflib import Graph, ConjunctiveGraph, Literal, BNode, Namespace, RDF, URIRef, Literal, OWL, RDFS
+from rdflib import Graph
 import matplotlib.pyplot as plt
-import os
+from pykeen import predict
+from scipy.special import expit
+
+#### create data for ML ####
 
 # parse the KG into a graph
 g = Graph()
 g.parse("data/KG.ttl")
 
-############################# create triples from graph; should be np.array ########################################
-
+# get all triples
 data = []
-i=0
 for s,p,o in g.triples((None,None,None)):
     if '#' in s:
         s = s.split("#")[1]
@@ -25,27 +25,27 @@ for s,p,o in g.triples((None,None,None)):
     data.append([s, p, o])
 t = np.array(data, dtype=str)
 
-############################################ ML as in tutorial ##############################################
+##### ML as in tutorial ####
 
-# TRIPLES
+# put triples in correct format
 trip = triples.TriplesFactory.from_labeled_triples(t)
 
-# SPLIT DATA INTO TRAIN AND TEST
+# split data into train and test set
 training, testing = trip.split([0.95,0.05])
 
 print('Train set size: ', training.triples.shape)
 print('Test set size: ', testing.triples.shape)
 
 
-# CREATE PIPELINE
+# create pipeline
 pipeline_result = pipeline(
     random_seed=0,
-    model='ComplEx',                # CHANGE MODEL:
-    dimensions=150,                         # elise: ComplEx
-    training=training,                      # Josip: TransE
-    testing=testing,                        # taylor: RotatE
-     training_kwargs=dict(                  # nikki: DistMult
-        num_epochs=50,                                          # epochs: 50 and 100
+    model='DistMult',             # change model name tot run different model   
+    dimensions=150,                         
+    training=training,                      
+    testing=testing,                        
+     training_kwargs=dict(                  
+        num_epochs=100,                         # change epochs, either 50 or 100                 
         checkpoint_name='checkpoint.pt',
         checkpoint_directory='checkpoint_dir/',
         checkpoint_frequency=20,
@@ -61,20 +61,18 @@ pipeline_result = pipeline(
     )
 )
 
-# RESULTS --> CHANGE NAME AND NR. EPOCHS
+# results
 pipeline_result.plot_losses()                           
 print(pipeline_result.get_metric('mrr'))            # inverse_harmonic_mean_rank in results
 print(pipeline_result.get_metric('hits@10'))
-pipeline_result.save_to_directory("ComplEx_50")     # CHANGE TO YOUR MODEL AND NR. EPOCHS
+pipeline_result.save_to_directory("DistMult_100")     
 
-plt.savefig('ComplEx_50_losses.png')                # CHANGE TO YOUR MODEL AND NR. EPOCHS
+plt.savefig('DistMult_100_losses.png')                
 plt.show()  
 
-############################################ MISSING LINK PREDICTION ##################################################
-from pykeen import predict
-from scipy.special import expit
+#### missing link prediction ####
 
-# all drugs
+# all drugs and symptoms
 drugcodes = []
 symptoms = []
 for triple in data:
@@ -84,6 +82,7 @@ for triple in data:
         if triple[2] not in symptoms:
             symptoms.append(triple[2])
 
+# all possible drug-symptom combinations
 links = []
 for drug in drugcodes:
     for symptom in symptoms:
@@ -91,17 +90,10 @@ for drug in drugcodes:
 
 X_unseen = np.array(links)
 
-# from pykeen.predict import predict_triples
-
-# got_unseen = triples.get_mapped_tripples(X_unseen,factory=got)
+# prediction + convert scores to probabilities
 pack = predict.predict_triples(model=pipeline_result.model, triples=X_unseen, triples_factory=trip)
-
 processed_results = pack.process().df
-# print(processed_results)
-
 probs = expit(processed_results['score'])
-# print(probs)
-
 processed_results['prob'] = probs
 processed_results['triple'] = list(zip([' '.join(x) for x in X_unseen]))
 
@@ -111,8 +103,6 @@ res = pd.DataFrame(list(zip([' '.join(x) for x in X_unseen],
                       np.squeeze(probs))), 
              columns=['statement', 'score', 'prob']).sort_values("score")
 
-res.to_pickle("ComplEx_50.pkl")     # CHANGE TO YOUR MODEL AND NR. EPOCHS
+# save results in pickle file
+res.to_pickle("DistMult_100.pkl")     
 
-## to read table
-# df = pd.read_pickle("ComplEx_50.pkl")
-# print(df)
