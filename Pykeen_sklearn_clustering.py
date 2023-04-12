@@ -4,18 +4,17 @@ import numpy as np
 from pykeen import utils, triples, models
 from sklearn.cluster import KMeans
 from rdflib import Graph, ConjunctiveGraph, Literal, BNode, Namespace, RDF, URIRef, Literal, OWL, RDFS
+from ampligraph.latent_features import ScoringBasedEmbeddingModel
 from pykeen.pipeline import pipeline
 from pykeen.models import TransE
 import torch.nn as nn
 import torch
 import re
-from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 import seaborn as sns
 from adjustText import adjust_text
 from ampligraph.discovery import find_clusters
 import rdflib
-from rdflib import Graph, ConjunctiveGraph, Literal, BNode, Namespace, RDF, URIRef, Literal, OWL, RDFS
 from rdflib.namespace import DC, FOAF
 
 g = Graph()
@@ -33,7 +32,6 @@ trip = triples.TriplesFactory.from_labeled_triples(t)
 
 path_to_kg = ('./data/KG.ttl')
 X_train, X_test = trip.split([0.95,0.05])
-
 
 embedding_model = pykeen.models.TransE(triples_factory = trip)
 
@@ -58,17 +56,12 @@ entity_embedding_tensor: torch.FloatTensor = entity_embeddings(indices=None)
 relation_embedding_tensor: torch.FloatTensor = relation_embeddings(indices=None)
 entity_embedding_tensor = model.entity_representations[0](indices=None).detach().numpy()
 
+num_clusters = 5
+kmeans = KMeans(n_clusters = num_clusters, random_state = 0).fit(entity_embedding_tensor)
+cluster_labels = kmeans.fit_predict(entity_embedding_tensor)
 
-# Cluster the embeddings using k-means
-cluster_list = [2,3,4,5,6,7,8,9,10]
-for i in cluster_list:
-    num_clusters = i  # Set the number of clusters
-    kmeans = KMeans(n_clusters = num_clusters, random_state = 0).fit(entity_embedding_tensor)
-    cluster_labels = kmeans.fit_predict(entity_embedding_tensor)
-
-# Plot the data with color-coded clusters
 plt.scatter(entity_embedding_tensor[:,0], entity_embedding_tensor[:,1], c = cluster_labels)
 plt.show()
 
-# Print the cluster labels
+
 print("Cluster labels: ", cluster_labels)
