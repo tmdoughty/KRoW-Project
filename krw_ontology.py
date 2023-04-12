@@ -1,15 +1,11 @@
 import pandas as pd
 import rdflib
-from rdflib import Graph, ConjunctiveGraph, Literal, BNode, Namespace, RDF, URIRef, Literal, OWL, RDFS
-from rdflib.namespace import DC, FOAF
-from owlrl import DeductiveClosure, RDFS_Semantics, OWLRL_Semantics 
+from rdflib import Graph, Literal, URIRef, Literal
+from owlready2 import get_ontology, Thing, DataProperty, ObjectProperty
 
-import networkx as nx
-from owlready2 import get_ontology, Thing, DataProperty, ObjectProperty, sync_reasoner
-
-data =  pd.read_csv('./data/opioids_data.csv', sep=',',engine='python')
-
-additional_data = pd.read_csv('./data/additional_data.csv', sep=',',engine='python')
+#### convert data to pandas dataframe; create empty ontology ####
+data =  pd.read_csv('data/opioids_data.csv', sep=',',engine='python')
+additional_data = pd.read_csv('data/additional_data.csv', sep=',',engine='python')
 
 onto = get_ontology("http://test.org/onto.owl")
 
@@ -23,7 +19,7 @@ class Codes(Thing):
 class LLTCode(Codes):
     namespace = onto
 
-# person data
+# demographic data
 class BodyWeight(Thing):
     namespace = onto
 class Height(Thing):
@@ -35,6 +31,8 @@ class Age(Thing):
 
 # drug
 class ATCode(Codes):
+    namespace = onto
+class ATCName(Codes):
     namespace = onto
 
 
@@ -65,7 +63,6 @@ class HeavyAtomCount(Thing):
     namespace = onto
 class Complexity(Thing):
     namespace = onto
-
 
 
 # symptoms
@@ -146,9 +143,13 @@ class occuredIn(ObjectProperty):
     domain = [LLTCode]
     range = [Person]
     namespace = onto
+class drugName(ObjectProperty):
+    domain = [ATCode]
+    range = [ATCName]
+    namespace = onto
 
-    # drug properties
 
+# drug properties
 
 class hasMuOpiodReceptor:
     domain = [ATCode]
@@ -227,13 +228,14 @@ g.parse("./data/Project_onto.owl")
 g.bind("ex", EX)
 
 for index, opioid in data.iterrows():
+    # demographic triples
     per = URIRef(EX+"Person"+str(index))
-    #g.add((uri, RDF.type, EX.Person))
     g.add((per, EX.hasBodyWeight, Literal(opioid["BodyWeight"])))
     g.add((per, EX.hasHeight, Literal(opioid["Height"])))
     g.add((per, EX.hasSex, Literal(opioid["sex"])))
     g.add((per, EX.hasAge, Literal(opioid["age_year"])))
 
+    # drug triples
     llt = URIRef(EX+str(opioid["LLTCode"]))
     g.add((llt, EX.occuredIn, per))
     g.add((llt, EX.hasPTName, Literal(opioid["PTName"])))
@@ -244,8 +246,9 @@ for index, opioid in data.iterrows():
     atc = URIRef(EX+opioid["ATCode"])
     g.add((atc, EX.resultedIn, llt))
     g.add((atc, EX.drugDosage, Literal(opioid["GenericDrugName"])))
+    g.add((atc, EX.drugName, Literal(opioid['ATCText'])))
 
-
+#### create instances from second data set ####
 for index, opioid in additional_data.iterrows():
     drug = URIRef(EX+opioid["ATCode"])
     g.add((drug, EX.hasMuOpiodReceptor, Literal(opioid["Mu-type opioid receptor"])))
@@ -263,15 +266,9 @@ for index, opioid in additional_data.iterrows():
     g.add((drug, EX.hasMHeavyAtomCount, Literal(opioid["Heavy Atom Count"])))
     g.add((drug, EX.hasComplexity, Literal(opioid["Complexity"])))
     
-    
-    
-    
-   
-#### reasoner ####
-DeductiveClosure(OWLRL_Semantics ).expand(g)
 
 #### save graph ####
-g.serialize(format='turtle', destination="./data/Project")
+g.serialize(format='turtle', destination="./data/KG.ttl")
 
 
 
