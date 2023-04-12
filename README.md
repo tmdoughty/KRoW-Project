@@ -20,8 +20,8 @@ The SPARQL queries were created and used within the krw_sparql_exploration.py fi
 
 ### Clustering
 - Louvain: run LouvainClustering.py
-- 
-- 
+- Clustering using Pykeen and SkLearn: run Pykeen_sklearn_clustering.py 
+- K_means: run K_means.py
 
 ### Machine Learning
 Run the ML.py file. It only runs one PyKEEN model and one epoch size. To get the other, it needs to be changed by hand in the pipeline function and in the functions that save results.
